@@ -154,7 +154,7 @@ if [ $((${MODE} & 0x02)) -ne 0 ]; then
         cp ipex-llm-timing/scripts/compile_bundle.sh .
         sed -i "s/VER_IPEX=.*/VER_IPEX=/" compile_bundle.sh
         bash compile_bundle.sh 0
-        rm -rf compile_bundle.sh llvm-project llvm-release
+        rm -rf compile_bundle.sh #llvm-project llvm-release
         cp ipex-llm-timing/dist/*.whl ${WHEELFOLDER}
 
         # The following is only for DeepSpeed case
