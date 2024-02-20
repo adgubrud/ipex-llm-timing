@@ -154,9 +154,12 @@ def _beam_search(
     beam_scores[:, 1:] = -1e9
     beam_scores = beam_scores.view((batch_size * num_beams,))
     this_peer_finished = False  # used by synced_gpus only
-    
-    while True:
-        ipex._C.reset_debug_timers()
+
+    tokens_length = int(self.config.text_max_length) - int(input_ids.size(dim=1))
+    step_i = 0
+    ipex._C.reset_debug_timers()
+    while True:    
+        step_i += 1    
         tic = time.time()
         if synced_gpus:
             # Under synced_gpus the `forward` call must continue until all gpus complete their sequence.
@@ -413,7 +416,7 @@ def _beam_search(
         cur_len = cur_len + 1
         latency_list.append(time.time() - tic)
 
-        if first_token:
+        if first_token or step_i == tokens_length:
             ipex._C.print_debug_timers(0, False)
             ipex._C.reset_debug_timers()
 
