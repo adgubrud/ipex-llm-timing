@@ -73,7 +73,7 @@ inline at::Tensor wt_tensor_for_first_token(at::Tensor& t) {
 
   auto cpy_tpp =
       SCOPEIT(CpyTPP<T>(C2, K2 * C3, K2 * C3, RBS * K2 * C3), EW_COPY);
-
+  
 #pragma omp parallel for collapse(2)
   for (int i = 0; i < K1 / RBS; i++) {
     for (int j = 0; j < C1; j++) {
@@ -142,6 +142,7 @@ inline void tpp_linear_bias(
   {
     RECORD_SCOPE(tpp_linear_krnl, {t_in, t_wt_V});
     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+    RECORD_OMP_TIME();
     auto ogemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
         {{0, Nc, Ncb, false}, {0L, BS, BSb}, {Nk}}, loop_scheme);
     ogemm_loop(
@@ -222,6 +223,7 @@ inline void tpp_linear_no_bias(
   {
     RECORD_SCOPE(tpp_linear_krnl, {t_in, t_wt_V});
     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+    RECORD_OMP_TIME();
     auto gemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
         {{0, Nc, Ncb, false}, {0, BS, BSb}, {Nk}}, loop_scheme);
     gemm_loop(
@@ -302,6 +304,7 @@ inline void tpp_linear_mul(
     RECORD_SCOPE(tpp_linear_mul_krnl, {t_in, t_wt_V});
 
     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+    RECORD_OMP_TIME();
     auto ogemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
         {{0, Nc, Ncb, false}, {0L, BS, BSb}, {Nk}}, loop_scheme);
     ogemm_loop(
@@ -400,6 +403,7 @@ inline void tpp_linear_add_add(
     RECORD_SCOPE(tpp_linear_add_add_krnl, {t_in, t_wt_V});
 
     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+    RECORD_OMP_TIME();
     auto ogemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
         {{0, Nc, Ncb, false}, {0L, BS, BSb}, {Nk}}, loop_scheme);
     ogemm_loop(
@@ -493,6 +497,7 @@ inline void tpp_linear_gelu(
     RECORD_SCOPE(tpp_linear_gelu_krnl, {t_in, t_wt_V});
 
     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+    RECORD_OMP_TIME();
     auto igemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
         {{0, Nc, Ncb, false}, {0, BS, BSb}, {Nk}}, loop_scheme);
     igemm_loop(
@@ -610,6 +615,7 @@ inline void tpp_fused_gate_up_proj(
     RECORD_SCOPE(tpp_fused_gate_up_proj_krnl, {t_in, t_wt_gate_V});
 
     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+    RECORD_OMP_TIME();
     auto igemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
         {{0, Nc, Ncb, false}, {0, BS, BSb}, {Nk}}, loop_scheme);
     igemm_loop(
@@ -724,6 +730,7 @@ inline void tpp_linear_add(
     RECORD_SCOPE(tpp_linear_add_krnl, {t_in, t_wt_V});
 
     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+    RECORD_OMP_TIME();
     auto ogemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
         {{0, Nc, Ncb, false}, {0L, BS, BSb}, {Nk}}, loop_scheme);
     ogemm_loop(
@@ -816,6 +823,7 @@ inline void tpp_linear_silu(
     RECORD_SCOPE(tpp_linear_silu_krnl, {t_in, t_wt_V});
 
     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+    RECORD_OMP_TIME();
     auto igemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
         {{0, Nc, Ncb, false}, {0, BS, BSb}, {Nk}}, loop_scheme);
     igemm_loop(
@@ -908,6 +916,7 @@ inline void tpp_linear_relu(
     RECORD_SCOPE(tpp_linear_relu_krnl, {t_in, t_wt_V});
 
     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+    RECORD_OMP_TIME();
     auto igemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
         {{0, Nc, Ncb, false}, {0, BS, BSb}, {Nk}}, loop_scheme);
     igemm_loop(
