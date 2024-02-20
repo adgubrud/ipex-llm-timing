@@ -11,6 +11,7 @@ from transformers.generation.logits_process import LogitsProcessorList
 from transformers.generation.beam_search import BeamScorer
 from transformers.utils import ModelOutput
 import time
+import intel_extension_for_pytorch as ipex
 
 
 class BeamSearchEncoderDecoderOutput(ModelOutput):
@@ -153,7 +154,9 @@ def _beam_search(
     beam_scores[:, 1:] = -1e9
     beam_scores = beam_scores.view((batch_size * num_beams,))
     this_peer_finished = False  # used by synced_gpus only
+    
     while True:
+        ipex._C.reset_debug_timers()
         tic = time.time()
         if synced_gpus:
             # Under synced_gpus the `forward` call must continue until all gpus complete their sequence.
@@ -409,6 +412,10 @@ def _beam_search(
         # increase cur_len
         cur_len = cur_len + 1
         latency_list.append(time.time() - tic)
+
+        if first_token:
+            ipex._C.print_debug_timers(0, False)
+            ipex._C.reset_debug_timers()
 
         if beam_scorer.is_done or stopping_criteria(input_ids, scores):
             if not synced_gpus:

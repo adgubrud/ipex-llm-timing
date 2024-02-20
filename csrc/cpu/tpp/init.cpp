@@ -4,7 +4,7 @@
 
 #include <libxsmm.h>
 #include <libxsmm_intrinsics_x86.h>
-//#include "init.h"
+#include "init.h"
 #include "timing.h"
 #include "utils.h"
 
@@ -84,7 +84,7 @@ long long hsh_key, hsh_ret;
 void reset_debug_timers() {
   hsh_key = 0;
   hsh_ret = 0;
-  RECORD_SCOPE(reset_debug_timers);
+  //RECORD_SCOPE(reset_debug_timers);
 #pragma omp parallel
   {
     int tid = omp_get_thread_num();
@@ -122,7 +122,7 @@ void reset_debug_timers() {
 }
 
 void print_debug_timers(int tid, bool detailed) {
-  RECORD_SCOPE(print_debug_timers, {tid, detailed});
+  //RECORD_SCOPE(print_debug_timers, {tid, detailed});
   int my_rank = guess_mpi_rank();
   if (my_rank != 0)
     return;
@@ -130,13 +130,13 @@ void print_debug_timers(int tid, bool detailed) {
   constexpr int maxlen = 10000;
   SafePrint<maxlen> printf;
   // printf("%-20s", "####");
-  printf("### ##: %-11s: ", "#KEY#");
+  printf("###; ##; %-11s; ", "#KEY#");
   for (int t = 0; t < LAST_TIMER; t++) {
     if (detailed || t == 0)
-      printf(" %7s", DebugTimerName(t));
+      printf(" %7s;", DebugTimerName(t));
   }
   printf(
-      " %8s  %8s  %8s  %8s  %5s %8s (%4s) %6s\n",
+      " %8s;  %8s;  %8s;  %8s;  %5s; %8s; (%4s); %6s;\n",
       "Total",
       "ITotal",
       "OTotal",
@@ -151,10 +151,10 @@ void print_debug_timers(int tid, bool detailed) {
         if (scope.master_timer == 0.0)
           return;
         double total = 0.0;
-        printf("TID %2d: %-11s: ", i, scope.name.c_str());
+        printf("TID; %2d; %-11s; ", i, scope.name.c_str());
         for (int t = 0; t < LAST_TIMER; t++) {
           if (detailed || t == 0)
-            printf(" %7.1f", scope.detailed_timers[i][t] * 1e3);
+            printf(" %7.1f;", scope.detailed_timers[i][t] * 1e3);
           total += scope.detailed_timers[i][t];
         }
         // printf(" %7.1f", scope.detailed_timers[i][LAST_TIMER] * 1e3);
@@ -163,7 +163,7 @@ void print_debug_timers(int tid, bool detailed) {
           t_flops += scope.flops[f][0];
         if (t_flops > 0.0) {
           printf(
-              " %8.1f  %8.1f  %8.1f  %8.1f  %5ld %8.3f (%4.2f) %6.3f\n",
+              " %8.1f;  %8.1f;  %8.1f;  %8.1f;  %5ld; %8.3f; (%4.2f); %6.3f;\n",
               total * 1e3,
               scope.detailed_timers[i][LAST_TIMER] * 1e3,
               scope.omp_timer * 1e3,
@@ -174,7 +174,7 @@ void print_debug_timers(int tid, bool detailed) {
               t_flops * 1e-12 / scope.detailed_timers[i][BRGEMM]);
         } else {
           printf(
-              " %8.1f  %8.1f  %8.1f  %8.1f  %5ld\n",
+              " %8.1f;  %8.1f;  %8.1f;  %8.1f;  %5ld;\n",
               total * 1e3,
               scope.detailed_timers[i][LAST_TIMER] * 1e3,
               scope.omp_timer * 1e3,
@@ -196,7 +196,7 @@ void print_debug_timers(int tid, bool detailed) {
 }
 
 void print_debug_thread_imbalance() {
-  RECORD_SCOPE(print_debug_thread_imbalance);
+  //RECORD_SCOPE(print_debug_thread_imbalance);
   int my_rank = guess_mpi_rank();
   if (my_rank != 0)
     return;
@@ -205,9 +205,9 @@ void print_debug_thread_imbalance() {
   SafePrint<maxlen> printf;
   // printf("%-20s", "####");
   printf("%-11s: ", "#KEY#");
-  printf("TID %7s %7s %7s  ", DebugTimerName(0), "ELTW", "Total");
-  printf("MIN %7s %7s %7s  ", DebugTimerName(0), "ELTW", "Total");
-  printf("MAX %7s %7s %7s  ", DebugTimerName(0), "ELTW", "Total");
+  printf("TID %7s; %7s; %7s;  ", DebugTimerName(0), "ELTW", "Total");
+  printf("MIN %7s; %7s; %7s;  ", DebugTimerName(0), "ELTW", "Total");
+  printf("MAX %7s; %7s; %7s;  ", DebugTimerName(0), "ELTW", "Total");
   printf(
       " %8s  %9s (%5s) %6s   %9s %9s %9s\n",
       "MTotal",

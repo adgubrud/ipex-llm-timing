@@ -88,7 +88,7 @@ inline int register_scope(std::string name) {
   auto& _scope_list = get_scope_list();
   _scope_list.emplace_back(name);
   int idx = _scope_list.size() - 1;
-  // printf("Registering %s scope @%d\n", name.c_str(), idx);
+  //printf("Registering %s scope @%d\n", name.c_str(), idx);
   return idx;
 }
 
@@ -210,10 +210,10 @@ class ScopedTPP {
 #define SCOPEIT(f, ...) ScopedTPP<decltype(f), 0>(f, ##__VA_ARGS__)
 #define SCOPEIT_REF(f, ...) ScopedTPP<decltype(f), 1>(f, ##__VA_ARGS__)
 #define SCOPEIT_DECL(t, ...) ScopedTPP<t, ##__VA_ARGS__, 0>
-#define RECORD_SCOPE(scope, ...)
-//#define RECORD_SCOPE(scope, ...) \
-//  GlobalScope gs_(sc_##scope);   \
-//  RECORD_FUNCTION(#scope, std::vector<c10::IValue>(__VA_ARGS__))
+//#define RECORD_SCOPE(scope, ...)
+#define RECORD_SCOPE(scope, ...) \
+  GlobalScope gs_(sc_##scope);   \
+  RECORD_FUNCTION(#scope, std::vector<c10::IValue>(__VA_ARGS__))
 #define RECORD_OMP_TIME() OMPScope os_
 #else
 #define SCOPEIT(f, ...) f
