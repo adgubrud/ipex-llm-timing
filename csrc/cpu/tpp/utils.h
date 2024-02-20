@@ -13,6 +13,7 @@
 
 #include <iostream>
 #include <vector>
+#include <unistd.h>
 #ifdef _OPENMP
 #include <omp.h>
 #else
@@ -117,6 +118,7 @@ static __inline__ unsigned long long rdtsc(void) {
 #endif
 inline double getFreq() {
   uint64_t s = rdtsc();
+  sleep(1);
   uint64_t e = rdtsc();
   return (e - s) * 1.0;
 }
