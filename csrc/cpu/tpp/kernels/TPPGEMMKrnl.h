@@ -36,23 +36,24 @@ REGISTER_LOCAL_SCOPE(
     "tpp_linear_gelu_krnl"); // linear bias + gelu
 
 REGISTER_LOCAL_SCOPE(
-    qkv_gemm,
-    "qkv_gemm"); //  qkv
+    pln_gemm,
+    "pln_gemm"); // pln_gemm
 
 REGISTER_LOCAL_SCOPE(
     fqkv_gemm,
-    "fqkv_gemm"); //  fqkv
+    "fqkv_gemm"); // fqkv_gemm
 
 REGISTER_LOCAL_SCOPE(
-    pln_gemm,
-    "pln_gemm"); //  pln
+    qkv_gemm,
+    "qkv_gemm"); // qkv_gemm    
 
 REGISTER_LOCAL_SCOPE(
     i_gemm,
-    "i_gemm"); //  i
+    "i_gemm"); // i_gemm
+
 REGISTER_LOCAL_SCOPE(
     o_gemm,
-    "o_gemm"); //  i    
+    "o_gemm"); // o_gemm   
 
 REGISTER_LOCAL_SCOPE(
     tpp_linear_mul_krnl,
@@ -162,160 +163,59 @@ inline void tpp_linear_bias(
       (BrgemmTPP<T, T>(rem, Hk, Hc, Hc, Hk * Hc, C, Hk, K, 1.0, 0, Ncb)));
 
   {
-    //RECORD_SCOPE(tpp_linear_krnl, {t_in, t_wt_V});
-    if (wt_sizes[3] == 100)
-    {
-      RECORD_SCOPE(pln_gemm, {t_in, t_wt_V});
-      auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+    RECORD_SCOPE(pln_gemm, {t_in, t_wt_V});
+    auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
 #ifdef OMP_TIMERS    
-      RECORD_OMP_TIME();
+    RECORD_OMP_TIME();
 #endif    
-      auto ogemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
-          {{0, Nc, Ncb, false}, {0L, BS, BSb}, {Nk}}, loop_scheme);
-      ogemm_loop(
-          [&](int* ind) {
-            int nc = ind[0], s1 = ind[1], nk = ind[2];
-            auto count = nc + Ncb < Nc ? Ncb : Nc - nc;
-            bool is_rem = (s1 + BSb > BS);
-            if (!is_rem) {
-              if (nc == 0) {
-                if (with_bias) {
-                  copy_bias_tpp(bias[nk], out[s1][nk]);
-                } else {
-                  zero_tpp(out[s1][nk]);
-                }
+    auto ogemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
+        {{0, Nc, Ncb, false}, {0L, BS, BSb}, {Nk}}, loop_scheme);
+    ogemm_loop(
+        [&](int* ind) {
+          int nc = ind[0], s1 = ind[1], nk = ind[2];
+          auto count = nc + Ncb < Nc ? Ncb : Nc - nc;
+          bool is_rem = (s1 + BSb > BS);
+          if (!is_rem) {
+            if (nc == 0) {
+              if (with_bias) {
+                copy_bias_tpp(bias[nk], out[s1][nk]);
+              } else {
+                zero_tpp(out[s1][nk]);
               }
-              brgemm_tpp(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, true);
-            } else {
-              if (nc == 0) {
-                if (with_bias) {
-                  copy_bias_tpp_rem(bias[nk], out[s1][nk]);
-                } else {
-                  zero_tpp_rem(out[s1][nk]);
-                }
-              }
-              brgemm_tpp_rem(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, false);
-              brgemm_tpp.config();
             }
-          },
-          [&]() { 
-#ifdef DETAILED_TIMERS          
-            TimerStart(); 
-#endif        
-            brgemm_tpp.config(); 
-          },
-          [&]() { 
-            brgemm_tpp.release(); 
-#ifdef DETAILED_TIMERS          
-            TimerEnd();
-#endif
-          });
-    }
-    else if ((wt_sizes[3] == 16 && wt_sizes[0] == 256) || (wt_sizes[3] == 64 && wt_sizes[0] == 64))
-    {
-      RECORD_SCOPE(qkv_gemm, {t_in, t_wt_V});
-      auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
-#ifdef OMP_TIMERS    
-      RECORD_OMP_TIME();
-#endif    
-      auto ogemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
-          {{0, Nc, Ncb, false}, {0L, BS, BSb}, {Nk}}, loop_scheme);
-      ogemm_loop(
-          [&](int* ind) {
-            int nc = ind[0], s1 = ind[1], nk = ind[2];
-            auto count = nc + Ncb < Nc ? Ncb : Nc - nc;
-            bool is_rem = (s1 + BSb > BS);
-            if (!is_rem) {
-              if (nc == 0) {
-                if (with_bias) {
-                  copy_bias_tpp(bias[nk], out[s1][nk]);
-                } else {
-                  zero_tpp(out[s1][nk]);
-                }
+            brgemm_tpp(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, true);
+          } else {
+            if (nc == 0) {
+              if (with_bias) {
+                copy_bias_tpp_rem(bias[nk], out[s1][nk]);
+              } else {
+                zero_tpp_rem(out[s1][nk]);
               }
-              brgemm_tpp(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, true);
-            } else {
-              if (nc == 0) {
-                if (with_bias) {
-                  copy_bias_tpp_rem(bias[nk], out[s1][nk]);
-                } else {
-                  zero_tpp_rem(out[s1][nk]);
-                }
-              }
-              brgemm_tpp_rem(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, false);
-              brgemm_tpp.config();
             }
-          },
-          [&]() { 
+            brgemm_tpp_rem(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, false);
+            brgemm_tpp.config();
+          }
+        },
+        [&]() { 
 #ifdef DETAILED_TIMERS          
-            TimerStart(); 
+          TimerStart(); 
 #endif        
-            brgemm_tpp.config(); 
-          },
-          [&]() { 
-            brgemm_tpp.release(); 
+          brgemm_tpp.config(); 
+        },
+        [&]() { 
+          brgemm_tpp.release(); 
 #ifdef DETAILED_TIMERS          
-            TimerEnd();
+          TimerEnd();
 #endif
-          });
-    }
-    else
-    {
-      RECORD_SCOPE(qkv_gemm, {t_in, t_wt_V});
-      auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
-#ifdef OMP_TIMERS    
-      RECORD_OMP_TIME();
-#endif    
-      auto ogemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
-          {{0, Nc, Ncb, false}, {0L, BS, BSb}, {Nk}}, loop_scheme);
-      ogemm_loop(
-          [&](int* ind) {
-            int nc = ind[0], s1 = ind[1], nk = ind[2];
-            auto count = nc + Ncb < Nc ? Ncb : Nc - nc;
-            bool is_rem = (s1 + BSb > BS);
-            if (!is_rem) {
-              if (nc == 0) {
-                if (with_bias) {
-                  copy_bias_tpp(bias[nk], out[s1][nk]);
-                } else {
-                  zero_tpp(out[s1][nk]);
-                }
-              }
-              brgemm_tpp(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, true);
-            } else {
-              if (nc == 0) {
-                if (with_bias) {
-                  copy_bias_tpp_rem(bias[nk], out[s1][nk]);
-                } else {
-                  zero_tpp_rem(out[s1][nk]);
-                }
-              }
-              brgemm_tpp_rem(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, false);
-              brgemm_tpp.config();
-            }
-          },
-          [&]() { 
-#ifdef DETAILED_TIMERS          
-            TimerStart(); 
-#endif        
-            brgemm_tpp.config(); 
-          },
-          [&]() { 
-            brgemm_tpp.release(); 
-#ifdef DETAILED_TIMERS          
-            TimerEnd();
-#endif
-          });
-    }
-
+        });
   }
 }
 
 template <typename T, typename Tout = T>
-inline void tpp_linear_no_bias(
-    const at::Tensor& t_in,
+inline void _tpp_linear_no_bias(const at::Tensor& t_in,
     const at::Tensor& t_wt,
-    at::Tensor& t_out) {
+    at::Tensor& t_out)
+{
   auto t_wt_ = t_wt;
   auto in_sizes = t_in.sizes();
   auto BS = in_sizes[0] * in_sizes[1];
@@ -354,129 +254,61 @@ inline void tpp_linear_no_bias(
       (BrgemmTPP<T, Tout>(BSb, Hk, Hc, Hc, Hk * Hc, C, Hk, K, 1.0, 0, Ncb)));
   auto brgemm_tpp_rem = SCOPEITGEMM(
       (BrgemmTPP<T, Tout>(rem, Hk, Hc, Hc, Hk * Hc, C, Hk, K, 1.0, 0, Ncb)));
+  auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+#ifdef OMP_TIMERS    
+    RECORD_OMP_TIME();
+#endif 
+  auto gemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
+      {{0, Nc, Ncb, false}, {0, BS, BSb}, {Nk}}, loop_scheme);
+  gemm_loop(
+      [&](int* ind) {
+        int nc = ind[0], s1 = ind[1], nk = ind[2];
+        auto count = nc + Ncb < Nc ? Ncb : Nc - nc;
+        bool is_rem = (s1 + BSb > BS);
+        if (!is_rem) {
+          if (nc == 0) {
+            zero_tpp(out[s1][nk]);
+          }
+          brgemm_tpp(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, true);
+        } else {
+          if (nc == 0) {
+            zero_tpp_rem(out[s1][nk]);
+          }
+          brgemm_tpp_rem(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, false);
+          brgemm_tpp.config();
+        }
+      },
+      [&]() { 
+#ifdef DETAILED_TIMERS          
+        TimerStart(); 
+#endif        
+        brgemm_tpp.config(); 
+      },
+      [&]() { 
+        brgemm_tpp.release(); 
+#ifdef DETAILED_TIMERS          
+        TimerEnd();
+#endif
+      });
+}
 
+template <typename T, typename Tout = T>
+inline void tpp_linear_no_bias(
+    const at::Tensor& t_in,
+    const at::Tensor& t_wt,
+    at::Tensor& t_out) 
+{
+  auto wt_sizes = t_wt.sizes();
+  
+  if ((wt_sizes[3] == 16 && wt_sizes[0] == 256) || (wt_sizes[3] == 64 && wt_sizes[0] == 64))
   {
-    //RECORD_SCOPE(tpp_linear_krnl, {t_in, t_wt_V});
-    if (wt_sizes[3] == 100)
-    {
-      RECORD_SCOPE(pln_gemm, {t_in, t_wt_V});
-      auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
-#ifdef OMP_TIMERS    
-      RECORD_OMP_TIME();
-#endif 
-      auto gemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
-          {{0, Nc, Ncb, false}, {0, BS, BSb}, {Nk}}, loop_scheme);
-      gemm_loop(
-          [&](int* ind) {
-            int nc = ind[0], s1 = ind[1], nk = ind[2];
-            auto count = nc + Ncb < Nc ? Ncb : Nc - nc;
-            bool is_rem = (s1 + BSb > BS);
-            if (!is_rem) {
-              if (nc == 0) {
-                zero_tpp(out[s1][nk]);
-              }
-              brgemm_tpp(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, true);
-            } else {
-              if (nc == 0) {
-                zero_tpp_rem(out[s1][nk]);
-              }
-              brgemm_tpp_rem(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, false);
-              brgemm_tpp.config();
-            }
-          },
-          [&]() { 
-#ifdef DETAILED_TIMERS          
-            TimerStart(); 
-#endif        
-            brgemm_tpp.config(); 
-          },
-          [&]() { 
-            brgemm_tpp.release(); 
-#ifdef DETAILED_TIMERS          
-            TimerEnd();
-#endif
-          });
-    }
-    else if ((wt_sizes[3] == 16 && wt_sizes[0] == 256) || (wt_sizes[3] == 64 && wt_sizes[0] == 64))
-    {
-      RECORD_SCOPE(qkv_gemm, {t_in, t_wt_V});
-      auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
-#ifdef OMP_TIMERS    
-      RECORD_OMP_TIME();
-#endif 
-      auto gemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
-          {{0, Nc, Ncb, false}, {0, BS, BSb}, {Nk}}, loop_scheme);
-      gemm_loop(
-          [&](int* ind) {
-            int nc = ind[0], s1 = ind[1], nk = ind[2];
-            auto count = nc + Ncb < Nc ? Ncb : Nc - nc;
-            bool is_rem = (s1 + BSb > BS);
-            if (!is_rem) {
-              if (nc == 0) {
-                zero_tpp(out[s1][nk]);
-              }
-              brgemm_tpp(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, true);
-            } else {
-              if (nc == 0) {
-                zero_tpp_rem(out[s1][nk]);
-              }
-              brgemm_tpp_rem(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, false);
-              brgemm_tpp.config();
-            }
-          },
-          [&]() { 
-#ifdef DETAILED_TIMERS          
-            TimerStart(); 
-#endif        
-            brgemm_tpp.config(); 
-          },
-          [&]() { 
-            brgemm_tpp.release(); 
-#ifdef DETAILED_TIMERS          
-            TimerEnd();
-#endif
-          });      
-    }
-    else
-    {
-      RECORD_SCOPE(fqkv_gemm, {t_in, t_wt_V});
-      auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
-#ifdef OMP_TIMERS    
-      RECORD_OMP_TIME();
-#endif 
-      auto gemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
-          {{0, Nc, Ncb, false}, {0, BS, BSb}, {Nk}}, loop_scheme);
-      gemm_loop(
-          [&](int* ind) {
-            int nc = ind[0], s1 = ind[1], nk = ind[2];
-            auto count = nc + Ncb < Nc ? Ncb : Nc - nc;
-            bool is_rem = (s1 + BSb > BS);
-            if (!is_rem) {
-              if (nc == 0) {
-                zero_tpp(out[s1][nk]);
-              }
-              brgemm_tpp(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, true);
-            } else {
-              if (nc == 0) {
-                zero_tpp_rem(out[s1][nk]);
-              }
-              brgemm_tpp_rem(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, false);
-              brgemm_tpp.config();
-            }
-          },
-          [&]() { 
-#ifdef DETAILED_TIMERS          
-            TimerStart(); 
-#endif        
-            brgemm_tpp.config(); 
-          },
-          [&]() { 
-            brgemm_tpp.release(); 
-#ifdef DETAILED_TIMERS          
-            TimerEnd();
-#endif
-          });    
-    }
+    RECORD_SCOPE(qkv_gemm, {t_in, t_wt});
+    _tpp_linear_no_bias<T>(t_in, t_wt, t_out);
+  }
+  else
+  {
+    RECORD_SCOPE(fqkv_gemm, {t_in, t_wt});
+    _tpp_linear_no_bias<T>(t_in, t_wt, t_out);
   }
 }
 
@@ -643,7 +475,6 @@ inline void tpp_linear_add_add(
   auto sadd_tpp_rem = SCOPEIT((ScaleAddTPP<T, T>(rem, Hk, K, K)), EW_ADD);
 
   {
-    //RECORD_SCOPE(tpp_linear_add_add_krnl, {t_in, t_wt_V});
     RECORD_SCOPE(o_gemm, {t_in, t_wt_V});
 
     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
@@ -750,7 +581,6 @@ inline void tpp_linear_gelu(
   auto gelu_fwd_tpp_rem = SCOPEIT(GeluFwdTPP<T>(rem, Hk, K, K), ACT);
 
   {
-    //RECORD_SCOPE(tpp_linear_gelu_krnl, {t_in, t_wt_V});
     RECORD_SCOPE(i_gemm, {t_in, t_wt_V});
 
     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
