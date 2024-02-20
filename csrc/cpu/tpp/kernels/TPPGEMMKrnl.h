@@ -13,6 +13,9 @@
 #include "tpp/tensor_helper.h"
 #include "tpp/xsmm_functors.h"
 
+#define DETAILED_TIMERS
+#define OMP_TIMERS
+
 namespace torch_ipex {
 namespace tpp {
 
@@ -142,7 +145,9 @@ inline void tpp_linear_bias(
   {
     RECORD_SCOPE(tpp_linear_krnl, {t_in, t_wt_V});
     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+#ifdef OMP_TIMERS    
     RECORD_OMP_TIME();
+#endif    
     auto ogemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
         {{0, Nc, Ncb, false}, {0L, BS, BSb}, {Nk}}, loop_scheme);
     ogemm_loop(
@@ -171,8 +176,18 @@ inline void tpp_linear_bias(
             brgemm_tpp.config();
           }
         },
-        [&]() { brgemm_tpp.config(); },
-        [&]() { brgemm_tpp.release(); });
+        [&]() { 
+#ifdef DETAILED_TIMERS          
+          TimerStart(); 
+#endif        
+          brgemm_tpp.config(); 
+        },
+        [&]() { 
+          brgemm_tpp.release(); 
+#ifdef DETAILED_TIMERS          
+          TimerEnd();
+#endif
+        });
   }
 }
 
@@ -223,7 +238,9 @@ inline void tpp_linear_no_bias(
   {
     RECORD_SCOPE(tpp_linear_krnl, {t_in, t_wt_V});
     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+#ifdef OMP_TIMERS    
     RECORD_OMP_TIME();
+#endif 
     auto gemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
         {{0, Nc, Ncb, false}, {0, BS, BSb}, {Nk}}, loop_scheme);
     gemm_loop(
@@ -244,8 +261,18 @@ inline void tpp_linear_no_bias(
             brgemm_tpp.config();
           }
         },
-        [&]() { brgemm_tpp.config(); },
-        [&]() { brgemm_tpp.release(); });
+        [&]() { 
+#ifdef DETAILED_TIMERS          
+          TimerStart(); 
+#endif        
+          brgemm_tpp.config(); 
+        },
+        [&]() { 
+          brgemm_tpp.release(); 
+#ifdef DETAILED_TIMERS          
+          TimerEnd();
+#endif
+        });
   }
 }
 
@@ -304,7 +331,9 @@ inline void tpp_linear_mul(
     RECORD_SCOPE(tpp_linear_mul_krnl, {t_in, t_wt_V});
 
     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+#ifdef OMP_TIMERS    
     RECORD_OMP_TIME();
+#endif 
     auto ogemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
         {{0, Nc, Ncb, false}, {0L, BS, BSb}, {Nk}}, loop_scheme);
     ogemm_loop(
@@ -339,8 +368,18 @@ inline void tpp_linear_mul(
             }
           }
         },
-        [&]() { brgemm_tpp.config(); },
-        [&]() { brgemm_tpp.release(); });
+        [&]() { 
+#ifdef DETAILED_TIMERS          
+          TimerStart(); 
+#endif        
+          brgemm_tpp.config(); 
+        },
+        [&]() { 
+          brgemm_tpp.release(); 
+#ifdef DETAILED_TIMERS          
+          TimerEnd();
+#endif
+        });
   }
 }
 
@@ -403,7 +442,9 @@ inline void tpp_linear_add_add(
     RECORD_SCOPE(tpp_linear_add_add_krnl, {t_in, t_wt_V});
 
     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+#ifdef OMP_TIMERS    
     RECORD_OMP_TIME();
+#endif 
     auto ogemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
         {{0, Nc, Ncb, false}, {0L, BS, BSb}, {Nk}}, loop_scheme);
     ogemm_loop(
@@ -440,8 +481,18 @@ inline void tpp_linear_add_add(
             }
           }
         },
-        [&]() { brgemm_tpp.config(); },
-        [&]() { brgemm_tpp.release(); });
+        [&]() { 
+#ifdef DETAILED_TIMERS          
+          TimerStart(); 
+#endif        
+          brgemm_tpp.config(); 
+        },
+        [&]() { 
+          brgemm_tpp.release(); 
+#ifdef DETAILED_TIMERS          
+          TimerEnd();
+#endif
+        });
   }
 }
 
@@ -497,7 +548,9 @@ inline void tpp_linear_gelu(
     RECORD_SCOPE(tpp_linear_gelu_krnl, {t_in, t_wt_V});
 
     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+#ifdef OMP_TIMERS    
     RECORD_OMP_TIME();
+#endif 
     auto igemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
         {{0, Nc, Ncb, false}, {0, BS, BSb}, {Nk}}, loop_scheme);
     igemm_loop(
@@ -532,8 +585,18 @@ inline void tpp_linear_gelu(
             }
           }
         },
-        [&]() { brgemm_tpp.config(); },
-        [&]() { brgemm_tpp.release(); });
+        [&]() { 
+#ifdef DETAILED_TIMERS          
+          TimerStart(); 
+#endif        
+          brgemm_tpp.config(); 
+        },
+        [&]() { 
+          brgemm_tpp.release(); 
+#ifdef DETAILED_TIMERS          
+          TimerEnd();
+#endif
+        });
   }
 }
 
@@ -615,7 +678,9 @@ inline void tpp_fused_gate_up_proj(
     RECORD_SCOPE(tpp_fused_gate_up_proj_krnl, {t_in, t_wt_gate_V});
 
     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+#ifdef OMP_TIMERS    
     RECORD_OMP_TIME();
+#endif 
     auto igemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
         {{0, Nc, Ncb, false}, {0, BS, BSb}, {Nk}}, loop_scheme);
     igemm_loop(
@@ -669,8 +734,18 @@ inline void tpp_fused_gate_up_proj(
             }
           }
         },
-        [&]() { brgemm_tpp.config(); },
-        [&]() { brgemm_tpp.release(); });
+        [&]() { 
+#ifdef DETAILED_TIMERS          
+          TimerStart(); 
+#endif        
+          brgemm_tpp.config(); 
+        },
+        [&]() { 
+          brgemm_tpp.release(); 
+#ifdef DETAILED_TIMERS          
+          TimerEnd();
+#endif
+        });
   }
 }
 
@@ -730,7 +805,9 @@ inline void tpp_linear_add(
     RECORD_SCOPE(tpp_linear_add_krnl, {t_in, t_wt_V});
 
     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+#ifdef OMP_TIMERS    
     RECORD_OMP_TIME();
+#endif 
     auto ogemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
         {{0, Nc, Ncb, false}, {0L, BS, BSb}, {Nk}}, loop_scheme);
     ogemm_loop(
@@ -765,8 +842,18 @@ inline void tpp_linear_add(
             }
           }
         },
-        [&]() { brgemm_tpp.config(); },
-        [&]() { brgemm_tpp.release(); });
+        [&]() { 
+#ifdef DETAILED_TIMERS          
+          TimerStart(); 
+#endif        
+          brgemm_tpp.config(); 
+        },
+        [&]() { 
+          brgemm_tpp.release(); 
+#ifdef DETAILED_TIMERS          
+          TimerEnd();
+#endif
+        });
   }
 }
 
@@ -823,7 +910,9 @@ inline void tpp_linear_silu(
     RECORD_SCOPE(tpp_linear_silu_krnl, {t_in, t_wt_V});
 
     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+#ifdef OMP_TIMERS    
     RECORD_OMP_TIME();
+#endif 
     auto igemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
         {{0, Nc, Ncb, false}, {0, BS, BSb}, {Nk}}, loop_scheme);
     igemm_loop(
@@ -858,8 +947,18 @@ inline void tpp_linear_silu(
             }
           }
         },
-        [&]() { brgemm_tpp.config(); },
-        [&]() { brgemm_tpp.release(); });
+        [&]() { 
+#ifdef DETAILED_TIMERS          
+          TimerStart(); 
+#endif        
+          brgemm_tpp.config(); 
+        },
+        [&]() { 
+          brgemm_tpp.release(); 
+#ifdef DETAILED_TIMERS          
+          TimerEnd();
+#endif
+        });
   }
 }
 
@@ -916,7 +1015,9 @@ inline void tpp_linear_relu(
     RECORD_SCOPE(tpp_linear_relu_krnl, {t_in, t_wt_V});
 
     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+#ifdef OMP_TIMERS    
     RECORD_OMP_TIME();
+#endif 
     auto igemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
         {{0, Nc, Ncb, false}, {0, BS, BSb}, {Nk}}, loop_scheme);
     igemm_loop(
@@ -951,8 +1052,18 @@ inline void tpp_linear_relu(
             }
           }
         },
-        [&]() { brgemm_tpp.config(); },
-        [&]() { brgemm_tpp.release(); });
+        [&]() { 
+#ifdef DETAILED_TIMERS          
+          TimerStart(); 
+#endif        
+          brgemm_tpp.config(); 
+        },
+        [&]() { 
+          brgemm_tpp.release(); 
+#ifdef DETAILED_TIMERS          
+          TimerEnd();
+#endif
+        });
   }
 }
 

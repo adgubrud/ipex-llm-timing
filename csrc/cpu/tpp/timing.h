@@ -102,6 +102,24 @@ inline int register_scope(std::string name) {
 #define USING_SCOPE(id)
 #endif
 
+inline void TimerStart() {
+  int tid = omp_get_thread_num();
+  auto time = getTime();
+  auto& scope = get_scope_list()[globalScope];
+  scope.detailed_timers[tid][LAST_TIMER] -= time;
+  auto& pass = get_pass_list()[globalPass];
+  pass.detailed_timers[tid][LAST_TIMER] -= time;
+}
+
+inline void TimerEnd() {
+  int tid = omp_get_thread_num();
+  auto time = getTime();
+  auto& scope = get_scope_list()[globalScope];
+  scope.detailed_timers[tid][LAST_TIMER] += time;
+  auto& pass = get_pass_list()[globalPass];
+  pass.detailed_timers[tid][LAST_TIMER] += time;
+}
+
 class ScopedTimer {
  public:
   ScopedTimer(DebugTimer t, long f = 0) : type(t), flops(f), start(getTime()) {}
