@@ -41,6 +41,7 @@
 #include "toolkit/sklearn.h"
 #include "tpp/optim.h"
 #include "tpp/utils.h"
+#include "tpp/init.h"
 
 namespace torch_ipex {
 namespace {
@@ -278,6 +279,10 @@ void InitIpexModuleBindings(py::module m) {
   m.def("_get_ideep_version", []() {
     return torch_ipex::utils::get_ideep_version();
   });
+
+  m.def("reset_debug_timers", &torch_ipex::tpp::reset_debug_timers);
+  m.def("print_debug_timers", &torch_ipex::tpp::print_debug_timers);
+  m.def("print_debug_thread_imbalance", &torch_ipex::tpp::print_debug_thread_imbalance);
 }
 } // namespace
 

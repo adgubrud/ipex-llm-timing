@@ -1,6 +1,8 @@
 #ifndef _BERT_TIMING_H_
 #define _BERT_TIMING_H_
 
+#define PROFILE_TPP 1
+
 #include "utils.h"
 namespace torch_ipex {
 namespace tpp {
@@ -52,16 +54,23 @@ enum PassType { OTH, FWD, BWD, UPD };
 
 extern PassType globalPass;
 extern int globalScope;
-constexpr int NUM_TIMERS = ((LAST_TIMER + 7) / 8) * 8;
+constexpr int NUM_TIMERS = ((LAST_TIMER + 8) / 8) * 8;
 extern double pass_timers[MAX_THREADS][3][NUM_TIMERS];
 extern double master_pass_timers[3];
 struct Scope {
   Scope(std::string const& name)
-      : name(name), master_timer(0.0), detailed_timers{0.0}, flops{0.0} {}
+      : name(name),
+        master_timer(0.0),
+        omp_timer(0.0),
+        detailed_timers{0.0},
+        flops{0.0},
+        count(0) {}
   const std::string name;
   double master_timer;
+  double omp_timer;
   double detailed_timers[MAX_THREADS][NUM_TIMERS];
   double flops[MAX_THREADS][8];
+  long count;
 };
 
 inline std::vector<Scope>& get_scope_list() {
@@ -200,9 +209,12 @@ class ScopedTPP {
 #ifdef PROFILE_TPP
 #define SCOPEIT(f, ...) ScopedTPP<decltype(f), 0>(f, ##__VA_ARGS__)
 #define SCOPEIT_REF(f, ...) ScopedTPP<decltype(f), 1>(f, ##__VA_ARGS__)
-#define RECORD_SCOPE(scope, ...) \
-  GlobalScope gs_(sc_##scope);   \
-  RECORD_FUNCTION(#scope, std::vector<c10::IValue>(__VA_ARGS__))
+#define SCOPEIT_DECL(t, ...) ScopedTPP<t, ##__VA_ARGS__, 0>
+#define RECORD_SCOPE(scope, ...)
+//#define RECORD_SCOPE(scope, ...) \
+//  GlobalScope gs_(sc_##scope);   \
+//  RECORD_FUNCTION(#scope, std::vector<c10::IValue>(__VA_ARGS__))
+#define RECORD_OMP_TIME() OMPScope os_
 #else
 #define SCOPEIT(f, ...) f
 #define RECORD_SCOPE(scope, ...)

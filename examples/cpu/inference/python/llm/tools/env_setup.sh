@@ -151,11 +151,11 @@ if [ $((${MODE} & 0x02)) -ne 0 ]; then
         fi
         echo "python -m pip install torch==${VER_TORCH} --index-url https://download.pytorch.org/whl/${URL_NIGHTLY}cpu" >> ${AUX_INSTALL_SCRIPT}
         # Install PyTorch and Intel® Extension for PyTorch*
-        cp intel-extension-for-pytorch/scripts/compile_bundle.sh .
+        cp ipex-llm-timing/scripts/compile_bundle.sh .
         sed -i "s/VER_IPEX=.*/VER_IPEX=/" compile_bundle.sh
         bash compile_bundle.sh 0
         rm -rf compile_bundle.sh llvm-project llvm-release
-        cp intel-extension-for-pytorch/dist/*.whl ${WHEELFOLDER}
+        cp ipex-llm-timing/dist/*.whl ${WHEELFOLDER}
 
         # The following is only for DeepSpeed case
         #Install oneccl-bind-pt(also named torch-ccl)
@@ -220,7 +220,7 @@ if [ $((${MODE} & 0x02)) -ne 0 ]; then
     cd ../..
     cp -r oneCCL/build/_install ${CCLFOLDER}
     rm -rf oneCCL
-    cd intel-extension-for-pytorch/examples/cpu/inference/python/llm
+    cd ipex-llm-timing/examples/cpu/inference/python/llm
 fi
 if [ $((${MODE} & 0x01)) -ne 0 ]; then
     conda install -y mkl

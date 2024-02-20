@@ -168,3 +168,15 @@ def version():
         print("torch version and sha:     {}".format(__torch_gitrev__))
     print("submodule oneDNN sha:      {}".format(__gpu_onednn_gitrev__))
     print("submodule ideep sha:      {}".format(__cpu_ideep_gitrev__))
+
+
+def reset_debug_timers():
+    _C.reset_debug_timers()
+
+
+def print_debug_timers(tid=0, detailed=True):
+    _C.print_debug_timers(tid, detailed)
+
+
+def print_debug_thread_imbalance():
+    _C.print_debug_thread_imbalance()

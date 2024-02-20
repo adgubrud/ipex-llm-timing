@@ -32,10 +32,10 @@ BASEFOLDER=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd ${BASEFOLDER}
 
 # Checkout individual components
-if [ ! -d intel-extension-for-pytorch ]; then
-    git clone https://github.com/intel/intel-extension-for-pytorch.git
+if [ ! -d ipex-llm-timing ]; then
+    git clone https://github.com/adgubrud/ipex-llm-timing.git
 fi
-cd intel-extension-for-pytorch
+cd ipex-llm-timing
 if [ ! -z "${VER_IPEX}" ]; then
     rm -rf * > /dev/null
     git checkout . > /dev/null
@@ -189,7 +189,7 @@ cd ..
 export PATH=${LLVM_ROOT}/bin:$PATH
 export LD_LIBRARY_PATH=${LLVM_ROOT}/lib:$LD_LIBRARY_PATH
 #  Intel® Extension for PyTorch*
-cd intel-extension-for-pytorch
+cd ipex-llm-timing
 python -m pip install -r requirements.txt
 export LLVM_DIR=${LLVM_ROOT}/lib/cmake/llvm
 export DNNL_GRAPH_BUILD_COMPILER_BACKEND=1

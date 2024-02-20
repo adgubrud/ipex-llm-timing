@@ -92,6 +92,7 @@ inline void tpp_linear_bias(
     const at::Tensor& t_wt,
     const at::Tensor& t_bias,
     at::Tensor& t_out) {
+  GlobalPass _gp(FWD);
   auto t_wt_ = t_wt;
   auto in_sizes = t_in.sizes();
   auto wt_sizes = t_wt_.sizes();
@@ -180,6 +181,7 @@ inline void tpp_linear_no_bias(
     const at::Tensor& t_in,
     const at::Tensor& t_wt,
     at::Tensor& t_out) {
+  GlobalPass _gp(FWD);
   auto t_wt_ = t_wt;
   auto in_sizes = t_in.sizes();
   auto BS = in_sizes[0] * in_sizes[1];
@@ -254,6 +256,7 @@ inline void tpp_linear_mul(
     const at::Tensor t_wt,
     const at::Tensor t_bias,
     at::Tensor t_out) {
+  GlobalPass _gp(FWD);
   auto t_wt_ = t_wt;
   auto in_sizes = t_in.sizes();
   auto BS = in_sizes[0] * in_sizes[1];
@@ -350,6 +353,7 @@ inline void tpp_linear_add_add(
     const at::Tensor& t_bias,
     at::Tensor& t_out,
     double scale) {
+  GlobalPass _gp(FWD);
   auto t_wt_ = t_wt;
   auto in_sizes = t_in.sizes();
   auto BS = in_sizes[0] * in_sizes[1];
@@ -447,6 +451,7 @@ inline void tpp_linear_gelu(
     const at::Tensor& t_wt,
     const at::Tensor& t_bias,
     at::Tensor& t_out) {
+  GlobalPass _gp(FWD);
   auto t_wt_ = t_wt;
   auto in_sizes = t_in.sizes();
   auto BS = in_sizes[0] * in_sizes[1];
@@ -550,6 +555,7 @@ inline void tpp_fused_gate_up_proj(
     const at::Tensor& t_wt_up,
     const at::Tensor& t_bias_up,
     at::Tensor& t_out) {
+  GlobalPass _gp(FWD);
   auto t_wt_gate_ = t_wt_gate;
   auto t_wt_up_ = t_wt_up;
   auto in_sizes = t_in.sizes();
@@ -676,6 +682,7 @@ inline void tpp_linear_add(
     const at::Tensor t_bias,
     at::Tensor t_out,
     float scale) {
+  GlobalPass _gp(FWD);
   auto t_wt_ = t_wt;
   auto in_sizes = t_in.sizes();
   auto BS = in_sizes[0] * in_sizes[1];
@@ -769,6 +776,7 @@ inline void tpp_linear_silu(
     const at::Tensor t_wt,
     const at::Tensor t_bias,
     at::Tensor t_out) {
+  GlobalPass _gp(FWD);
   auto t_wt_ = t_wt;
   auto in_sizes = t_in.sizes();
   auto BS = in_sizes[0] * in_sizes[1];
@@ -861,6 +869,7 @@ inline void tpp_linear_relu(
     const at::Tensor t_wt,
     const at::Tensor t_bias,
     at::Tensor t_out) {
+  GlobalPass _gp(FWD);
   auto t_wt_ = t_wt;
   auto in_sizes = t_in.sizes();
   auto BS = in_sizes[0] * in_sizes[1];
