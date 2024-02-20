@@ -137,6 +137,7 @@ class GlobalScope {
     auto time = getTime() - start;
     auto& scope = get_scope_list()[globalScope];
     scope.master_timer += time;
+    scope.count++;
     if (oldScope != 0) {
       // Remove time from outer scope
       auto& outer_scope = get_scope_list()[oldScope];
@@ -145,6 +146,19 @@ class GlobalScope {
     globalScope = oldScope;
   }
   int oldScope;
+  double start;
+};
+
+class OMPScope {
+ public:
+  OMPScope() : start(getTime()) {}
+  ~OMPScope() {
+    auto time = getTime() - start;
+    auto& scope = get_scope_list()[globalScope];
+    scope.omp_timer += time;
+    auto& pass = get_pass_list()[globalPass];
+    pass.omp_timer += time;
+  }
   double start;
 };
 
@@ -157,6 +171,7 @@ class GlobalPass {
     auto time = getTime() - start;
     auto& pass = get_pass_list()[globalPass];
     pass.master_timer += time;
+    pass.count++;
     if (oldPass != 0) {
       auto& outer_pass = get_pass_list()[oldPass];
       outer_pass.master_timer -= time;
