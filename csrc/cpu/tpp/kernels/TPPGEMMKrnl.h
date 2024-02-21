@@ -19,6 +19,18 @@
 namespace torch_ipex {
 namespace tpp {
 
+static int QKV_WT_BLK_16 = env2int("QKV_WT_BLK_16", 256);
+static int QKV_WT_BLK_64 = env2int("QKV_WT_BLK_64", 64);
+
+static int FQKV_WT_BLK_16 = env2int("FQKV_WT_BLK_16", 768);
+static int FQKV_WT_BLK_64 = env2int("FQKV_WT_BLK_64", 192);
+
+static int IGEMM_WT_BLK_16 = env2int("IGEMM_WT_BLK_16", 1024);
+static int IGEMM_WT_BLK_64 = env2int("IGEMM_WT_BLK_64", 256);
+
+static int OGEMM_WT_BLK_16 = env2int("OGEMM_WT_BLK_16", 1024);
+static int OGEMM_WT_BLK_64 = env2int("OGEMM_WT_BLK_64", 256);
+
 static int use_at_vnni = false; // env2int("USE_AT_VNNI");
 static int FT_OPT_SIZE = env2int("FT_OPT_SIZE", 256);
 static int NCB_BLOCK_SIZE = env2int("NCB_BLOCK_SIZE", 64);
@@ -300,15 +312,26 @@ inline void tpp_linear_no_bias(
 {
   auto wt_sizes = t_wt.sizes();
   
-  if ((wt_sizes[3] == 16 && wt_sizes[0] == 256) || (wt_sizes[3] == 64 && wt_sizes[0] == 64))
+  if ((wt_sizes[3] == 16 && wt_sizes[0] == QKV_WT_BLK_16) || (wt_sizes[3] == 64 && wt_sizes[0] == QKV_WT_BLK_64))
   {
     RECORD_SCOPE(qkv_gemm, {t_in, t_wt});
     _tpp_linear_no_bias<T>(t_in, t_wt, t_out);
   }
-  else
+  else if ((wt_sizes[3] == 16 && wt_sizes[0] == FQKV_WT_BLK_16) || (wt_sizes[3] == 64 && wt_sizes[0] == FQKV_WT_BLK_64))
   {
     RECORD_SCOPE(fqkv_gemm, {t_in, t_wt});
     _tpp_linear_no_bias<T>(t_in, t_wt, t_out);
+  }
+  else if ((wt_sizes[3] == 16 && wt_sizes[0] == OGEMM_WT_BLK_16) || (wt_sizes[3] == 64 && wt_sizes[0] == OGEMM_WT_BLK_64))
+  {
+    RECORD_SCOPE(o_gemm, {t_in, t_wt});
+    _tpp_linear_no_bias<T>(t_in, t_wt, t_out);
+  }
+  else{
+    {
+    RECORD_SCOPE(tpp_linear_krnl, {t_in, t_wt});
+    _tpp_linear_no_bias<T>(t_in, t_wt, t_out);
+  }
   }
 }
 
