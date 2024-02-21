@@ -31,6 +31,8 @@ static int IGEMM_WT_BLK_64 = env2int("IGEMM_WT_BLK_64", 256);
 static int OGEMM_WT_BLK_16 = env2int("OGEMM_WT_BLK_16", 1024);
 static int OGEMM_WT_BLK_64 = env2int("OGEMM_WT_BLK_64", 256);
 
+static int PLN_WT_BLK_100 = env2int("PLN_WT_BLK_100", 504);
+
 static int use_at_vnni = false; // env2int("USE_AT_VNNI");
 static int FT_OPT_SIZE = env2int("FT_OPT_SIZE", 256);
 static int NCB_BLOCK_SIZE = env2int("NCB_BLOCK_SIZE", 64);
@@ -38,8 +40,13 @@ static const char* GEMM_LOOP_SCHEME =
     getenv("GEMM_LOOP_SCHEME") ? getenv("GEMM_LOOP_SCHEME") : "aCB";
 
 REGISTER_LOCAL_SCOPE(
-    tpp_linear_krnl,
-    "tpp_linear_krnl"); //  linear W/ and W/O bias
+    tpp_linear_bias_krnl,
+    "tpp_linear_bias_krnl"); //  linear W/ bias
+
+REGISTER_LOCAL_SCOPE(
+    tpp_linear_no_bias_krnl,
+    "tpp_linear_no_bias_krnl"); //  linear W/O bias
+
 REGISTER_LOCAL_SCOPE(
     tpp_linear_add_add_krnl,
     "tpp_linear_add_add_krnl"); // linear bias + add + add
@@ -122,7 +129,7 @@ inline at::Tensor wt_tensor_for_first_token(at::Tensor& t) {
 }
 
 template <typename T>
-inline void tpp_linear_bias(
+inline void _tpp_linear_bias(
     const at::Tensor& t_in,
     const at::Tensor& t_wt,
     const at::Tensor& t_bias,
@@ -175,7 +182,6 @@ inline void tpp_linear_bias(
       (BrgemmTPP<T, T>(rem, Hk, Hc, Hc, Hk * Hc, C, Hk, K, 1.0, 0, Ncb)));
 
   {
-    RECORD_SCOPE(pln_gemm, {t_in, t_wt_V});
     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
 #ifdef OMP_TIMERS    
     RECORD_OMP_TIME();
@@ -223,8 +229,51 @@ inline void tpp_linear_bias(
   }
 }
 
+template <typename T>
+inline void tpp_linear_bias(
+    const at::Tensor& t_in,
+    const at::Tensor& t_wt,
+    const at::Tensor& t_bias,
+    at::Tensor& t_out) {
+
+  auto wt_sizes = t_wt.sizes();
+
+  if ((wt_sizes[3] == 16 && wt_sizes[0] == QKV_WT_BLK_16) || (wt_sizes[3] == 64 && wt_sizes[0] == QKV_WT_BLK_64))
+  {
+    RECORD_SCOPE(qkv_gemm, {t_in, t_wt});
+    _tpp_linear_bias<T>(t_in, t_wt, t_bias, t_out);
+  }
+  else if ((wt_sizes[3] == 16 && wt_sizes[0] == FQKV_WT_BLK_16) || (wt_sizes[3] == 64 && wt_sizes[0] == FQKV_WT_BLK_64))
+  {
+    RECORD_SCOPE(fqkv_gemm, {t_in, t_wt});
+    _tpp_linear_bias<T>(t_in, t_wt, t_bias, t_out);
+  }
+  else if ((wt_sizes[3] == 16 && wt_sizes[0] == OGEMM_WT_BLK_16) || (wt_sizes[3] == 64 && wt_sizes[0] == OGEMM_WT_BLK_64))
+  {
+    RECORD_SCOPE(o_gemm, {t_in, t_wt});
+    _tpp_linear_bias<T>(t_in, t_wt, t_bias, t_out);
+  }
+  else if ((wt_sizes[3] == 16 && wt_sizes[0] == IGEMM_WT_BLK_16) || (wt_sizes[3] == 64 && wt_sizes[0] == IGEMM_WT_BLK_64))
+  {
+    RECORD_SCOPE(i_gemm, {t_in, t_wt});
+    _tpp_linear_bias<T>(t_in, t_wt, t_bias, t_out);
+  }
+  else if (wt_sizes[3] == 100 && wt_sizes[0] == PLN_WT_BLK_100)
+  {
+    RECORD_SCOPE(pln_gemm, {t_in, t_wt});
+    _tpp_linear_bias<T>(t_in, t_wt, t_bias, t_out);
+  }  
+  else
+  {
+    RECORD_SCOPE(tpp_linear_bias_krnl, {t_in, t_wt});
+    _tpp_linear_bias<T>(t_in, t_wt, t_bias, t_out);
+  }
+  
+}
+
 template <typename T, typename Tout = T>
-inline void _tpp_linear_no_bias(const at::Tensor& t_in,
+inline void _tpp_linear_no_bias(
+    const at::Tensor& t_in,
     const at::Tensor& t_wt,
     at::Tensor& t_out)
 {
@@ -327,11 +376,20 @@ inline void tpp_linear_no_bias(
     RECORD_SCOPE(o_gemm, {t_in, t_wt});
     _tpp_linear_no_bias<T>(t_in, t_wt, t_out);
   }
-  else{
-    {
-    RECORD_SCOPE(tpp_linear_krnl, {t_in, t_wt});
+  else if ((wt_sizes[3] == 16 && wt_sizes[0] == IGEMM_WT_BLK_16) || (wt_sizes[3] == 64 && wt_sizes[0] == IGEMM_WT_BLK_64))
+  {
+    RECORD_SCOPE(i_gemm, {t_in, t_wt});
     _tpp_linear_no_bias<T>(t_in, t_wt, t_out);
   }
+  else if (wt_sizes[3] == 100 && wt_sizes[0] == PLN_WT_BLK_100)
+  {
+    RECORD_SCOPE(pln_gemm, {t_in, t_wt});
+    _tpp_linear_no_bias<T>(t_in, t_wt, t_out);
+  }  
+  else
+  {
+      RECORD_SCOPE(tpp_linear_no_bias_krnl, {t_in, t_wt});
+    _tpp_linear_no_bias<T>(t_in, t_wt, t_out);
   }
 }
 
