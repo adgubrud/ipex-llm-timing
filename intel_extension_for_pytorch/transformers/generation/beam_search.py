@@ -12,6 +12,7 @@ from transformers.generation.beam_search import BeamScorer
 from transformers.utils import ModelOutput
 import time
 import intel_extension_for_pytorch as ipex
+cpp_profile = True
 
 
 class BeamSearchEncoderDecoderOutput(ModelOutput):
@@ -416,7 +417,7 @@ def _beam_search(
         cur_len = cur_len + 1
         latency_list.append(time.time() - tic)
 
-        if first_token or step_i == tokens_length:
+        if cpp_profile and first_token or step_i == tokens_length:
             ipex._C.print_debug_timers(0, False)
             ipex._C.reset_debug_timers()
 

@@ -10,6 +10,8 @@ from transformers.generation.logits_process import LogitsProcessorList
 from transformers.generation.streamers import BaseStreamer
 from transformers.utils import ModelOutput
 import time
+import intel_extension_for_pytorch as ipex
+cpp_profile = True
 
 
 class GreedySearchDecoderOnlyOutput(ModelOutput):
@@ -133,7 +135,11 @@ def _greedy_search(
     )
 
     this_peer_finished = False  # used by synced_gpus only
+    tokens_length = int(self.config.text_max_length) - int(input_ids.size(dim=1))
+    step_i = 0
+    ipex._C.reset_debug_timers()
     while True:
+        step_i += 1    
         tic = time.time()
         if synced_gpus:
             # Under synced_gpus the `forward` call must continue until all gpus complete their sequence.
@@ -338,6 +344,11 @@ def _greedy_search(
 
         # stop when each sentence is finished, or if we exceed the maximum length
         latency_list.append(time.time() - tic)
+        
+        if cpp_profile and first_token or step_i == tokens_length:
+            ipex._C.print_debug_timers(0, False)
+            ipex._C.reset_debug_timers()
+
         if unfinished_sequences.max() == 0 or stopping_criteria(input_ids, scores):
             if not synced_gpus:
                 break
