@@ -15,23 +15,64 @@
 
 #define DETAILED_TIMERS
 #define OMP_TIMERS
+//#define PRINT_WT_MATRICES
 
 namespace torch_ipex {
 namespace tpp {
 
-static int QKV_WT_BLK_16 = env2int("QKV_WT_BLK_16", 256);
-static int QKV_WT_BLK_64 = env2int("QKV_WT_BLK_64", 64);
+static int QKV_WT_BLK_16_0 = env2int("QKV_WT_BLK_16_0", 256);
+static int QKV_WT_BLK_16_1 = env2int("QKV_WT_BLK_16_1", 64);
+static int QKV_WT_BLK_16_2 = env2int("QKV_WT_BLK_16_2", 32);
+static int QKV_WT_BLK_16_3 = env2int("QKV_WT_BLK_16_3", 16);
+static int QKV_WT_BLK_16_4 = env2int("QKV_WT_BLK_16_4", 2);
 
-static int FQKV_WT_BLK_16 = env2int("FQKV_WT_BLK_16", 768);
-static int FQKV_WT_BLK_64 = env2int("FQKV_WT_BLK_64", 192);
+static int QKV_WT_BLK_64_0 = env2int("QKV_WT_BLK_64_0", 64);
+static int QKV_WT_BLK_64_1 = env2int("QKV_WT_BLK_64_1", 64);
+static int QKV_WT_BLK_64_2 = env2int("QKV_WT_BLK_64_2", 32);
+static int QKV_WT_BLK_64_3 = env2int("QKV_WT_BLK_64_3", 64);
+static int QKV_WT_BLK_64_4 = env2int("QKV_WT_BLK_64_4", 2);
 
-static int IGEMM_WT_BLK_16 = env2int("IGEMM_WT_BLK_16", 1024);
-static int IGEMM_WT_BLK_64 = env2int("IGEMM_WT_BLK_64", 256);
+static int FQKV_WT_BLK_16_0 = env2int("FQKV_WT_BLK_16_0", 768);
+static int FQKV_WT_BLK_16_1 = env2int("FQKV_WT_BLK_16_1", 64);
+static int FQKV_WT_BLK_16_2 = env2int("FQKV_WT_BLK_16_2", 32);
+static int FQKV_WT_BLK_16_3 = env2int("FQKV_WT_BLK_16_3", 16);
+static int FQKV_WT_BLK_16_4 = env2int("FQKV_WT_BLK_16_4", 2);
 
-static int OGEMM_WT_BLK_16 = env2int("OGEMM_WT_BLK_16", 1024);
-static int OGEMM_WT_BLK_64 = env2int("OGEMM_WT_BLK_64", 256);
+static int FQKV_WT_BLK_64_0 = env2int("FQKV_WT_BLK_64_0", 192);
+static int FQKV_WT_BLK_64_1 = env2int("FQKV_WT_BLK_64_1", 64);
+static int FQKV_WT_BLK_64_2 = env2int("FQKV_WT_BLK_64_2", 32);
+static int FQKV_WT_BLK_64_3 = env2int("FQKV_WT_BLK_64_3", 64);
+static int FQKV_WT_BLK_64_4 = env2int("FQKV_WT_BLK_64_4", 2);
 
-static int PLN_WT_BLK_100 = env2int("PLN_WT_BLK_100", 504);
+static int IGEMM_WT_BLK_16_0 = env2int("IGEMM_WT_BLK_16_0", 1024);
+static int IGEMM_WT_BLK_16_1 = env2int("IGEMM_WT_BLK_16_1", 64);
+static int IGEMM_WT_BLK_16_2 = env2int("IGEMM_WT_BLK_16_2", 32);
+static int IGEMM_WT_BLK_16_3 = env2int("IGEMM_WT_BLK_16_3", 16);
+static int IGEMM_WT_BLK_16_4 = env2int("IGEMM_WT_BLK_16_4", 2);
+
+static int IGEMM_WT_BLK_64_0 = env2int("IGEMM_WT_BLK_64_0", 256);
+static int IGEMM_WT_BLK_64_1 = env2int("IGEMM_WT_BLK_64_1", 64);
+static int IGEMM_WT_BLK_64_2 = env2int("IGEMM_WT_BLK_64_2", 32);
+static int IGEMM_WT_BLK_64_3 = env2int("IGEMM_WT_BLK_64_3", 64);
+static int IGEMM_WT_BLK_64_4 = env2int("IGEMM_WT_BLK_64_4", 2);
+
+static int OGEMM_WT_BLK_16_0 = env2int("OGEMM_WT_BLK_16_0", 1024);
+static int OGEMM_WT_BLK_16_1 = env2int("OGEMM_WT_BLK_16_1", 64);
+static int OGEMM_WT_BLK_16_2 = env2int("OGEMM_WT_BLK_16_2", 32);
+static int OGEMM_WT_BLK_16_3 = env2int("OGEMM_WT_BLK_16_3", 16);
+static int OGEMM_WT_BLK_16_4 = env2int("OGEMM_WT_BLK_16_4", 2);
+
+static int OGEMM_WT_BLK_64_0 = env2int("OGEMM_WT_BLK_64_0", 256);
+static int OGEMM_WT_BLK_64_1 = env2int("OGEMM_WT_BLK_64_1", 64);
+static int OGEMM_WT_BLK_64_2 = env2int("OGEMM_WT_BLK_64_2", 32);
+static int OGEMM_WT_BLK_64_3 = env2int("OGEMM_WT_BLK_64_3", 64);
+static int OGEMM_WT_BLK_64_4 = env2int("OGEMM_WT_BLK_64_4", 2);
+
+static int PLN_WT_BLK_100_0 = env2int("PLN_WT_BLK_100_0", 504);
+static int PLN_WT_BLK_100_1 = env2int("PLN_WT_BLK_100_1", 64);
+static int PLN_WT_BLK_100_2 = env2int("PLN_WT_BLK_100_2", 32);
+static int PLN_WT_BLK_100_3 = env2int("PLN_WT_BLK_100_3", 100);
+static int PLN_WT_BLK_100_4 = env2int("PLN_WT_BLK_100_4", 2);
 
 static int use_at_vnni = false; // env2int("USE_AT_VNNI");
 static int FT_OPT_SIZE = env2int("FT_OPT_SIZE", 256);
@@ -146,6 +187,9 @@ inline void _tpp_linear_bias(
     }
     large_cache_opt = true;
   }
+#ifdef PRINT_WT_MATRICES
+  printf("linear_bias;%d;%d;%d;%d;%d\n", wt_sizes[0], wt_sizes[1], wt_sizes[2], wt_sizes[3], wt_sizes[4]);
+#endif
 
   auto C = in_sizes[2];
 
@@ -238,27 +282,39 @@ inline void tpp_linear_bias(
 
   auto wt_sizes = t_wt.sizes();
 
-  if ((wt_sizes[3] == 16 && wt_sizes[0] == QKV_WT_BLK_16) || (wt_sizes[3] == 64 && wt_sizes[0] == QKV_WT_BLK_64))
+  if (
+    (wt_sizes[3] == 16 && wt_sizes[0] == QKV_WT_BLK_16_0 && wt_sizes[1] == QKV_WT_BLK_16_1 && wt_sizes[2] == QKV_WT_BLK_16_2 && wt_sizes[4] == QKV_WT_BLK_16_4) || 
+    (wt_sizes[3] == 64 && wt_sizes[0] == QKV_WT_BLK_64_0 && wt_sizes[1] == QKV_WT_BLK_64_1 && wt_sizes[2] == QKV_WT_BLK_64_2 && wt_sizes[4] == QKV_WT_BLK_64_4)
+    )
   {
     RECORD_SCOPE(qkv_gemm, {t_in, t_wt});
     _tpp_linear_bias<T>(t_in, t_wt, t_bias, t_out);
   }
-  else if ((wt_sizes[3] == 16 && wt_sizes[0] == FQKV_WT_BLK_16) || (wt_sizes[3] == 64 && wt_sizes[0] == FQKV_WT_BLK_64))
+  else if (
+    (wt_sizes[3] == 16 && wt_sizes[0] == FQKV_WT_BLK_16_0 && wt_sizes[1] == FQKV_WT_BLK_16_1 && wt_sizes[2] == FQKV_WT_BLK_16_2 && wt_sizes[4] == FQKV_WT_BLK_16_4) || 
+    (wt_sizes[3] == 64 && wt_sizes[0] == FQKV_WT_BLK_64_0 && wt_sizes[1] == FQKV_WT_BLK_64_1 && wt_sizes[2] == FQKV_WT_BLK_64_2 && wt_sizes[4] == FQKV_WT_BLK_64_4)
+    )
   {
     RECORD_SCOPE(fqkv_gemm, {t_in, t_wt});
     _tpp_linear_bias<T>(t_in, t_wt, t_bias, t_out);
   }
-  else if ((wt_sizes[3] == 16 && wt_sizes[0] == OGEMM_WT_BLK_16) || (wt_sizes[3] == 64 && wt_sizes[0] == OGEMM_WT_BLK_64))
+  else if (
+    (wt_sizes[3] == 16 && wt_sizes[0] == OGEMM_WT_BLK_16_0 && wt_sizes[1] == OGEMM_WT_BLK_16_1 && wt_sizes[2] == OGEMM_WT_BLK_16_2 && wt_sizes[4] == OGEMM_WT_BLK_16_4) || 
+    (wt_sizes[3] == 64 && wt_sizes[0] == OGEMM_WT_BLK_64_0 && wt_sizes[1] == OGEMM_WT_BLK_64_1 && wt_sizes[2] == OGEMM_WT_BLK_64_2 && wt_sizes[4] == OGEMM_WT_BLK_64_4)
+    )
   {
     RECORD_SCOPE(o_gemm, {t_in, t_wt});
     _tpp_linear_bias<T>(t_in, t_wt, t_bias, t_out);
   }
-  else if ((wt_sizes[3] == 16 && wt_sizes[0] == IGEMM_WT_BLK_16) || (wt_sizes[3] == 64 && wt_sizes[0] == IGEMM_WT_BLK_64))
-  {
+  else if (
+    (wt_sizes[3] == 16 && wt_sizes[0] == IGEMM_WT_BLK_16_0 && wt_sizes[1] == IGEMM_WT_BLK_16_1 && wt_sizes[2] == IGEMM_WT_BLK_16_2 && wt_sizes[4] == IGEMM_WT_BLK_16_4) || 
+    (wt_sizes[3] == 64 && wt_sizes[0] == IGEMM_WT_BLK_64_0 && wt_sizes[1] == IGEMM_WT_BLK_64_1 && wt_sizes[2] == IGEMM_WT_BLK_64_2 && wt_sizes[4] == IGEMM_WT_BLK_64_4)
+    )
+  { 
     RECORD_SCOPE(i_gemm, {t_in, t_wt});
     _tpp_linear_bias<T>(t_in, t_wt, t_bias, t_out);
   }
-  else if (wt_sizes[3] == 100 && wt_sizes[0] == PLN_WT_BLK_100)
+  else if (wt_sizes[3] == 100 && wt_sizes[0] == PLN_WT_BLK_100_0 && wt_sizes[1] == PLN_WT_BLK_100_1 && wt_sizes[2] == PLN_WT_BLK_100_2 && wt_sizes[4] == PLN_WT_BLK_100_4)
   {
     RECORD_SCOPE(pln_gemm, {t_in, t_wt});
     _tpp_linear_bias<T>(t_in, t_wt, t_bias, t_out);
@@ -289,6 +345,9 @@ inline void _tpp_linear_no_bias(
     }
     large_cache_opt = true;
   }
+#ifdef PRINT_WT_MATRICES
+  printf("linear_no_bias;%d;%d;%d;%d;%d\n", wt_sizes[0], wt_sizes[1], wt_sizes[2], wt_sizes[3], wt_sizes[4]);
+#endif  
 
   auto C = in_sizes[2];
 
@@ -361,27 +420,39 @@ inline void tpp_linear_no_bias(
 {
   auto wt_sizes = t_wt.sizes();
   
-  if ((wt_sizes[3] == 16 && wt_sizes[0] == QKV_WT_BLK_16) || (wt_sizes[3] == 64 && wt_sizes[0] == QKV_WT_BLK_64))
+  if (
+    (wt_sizes[3] == 16 && wt_sizes[0] == QKV_WT_BLK_16_0 && wt_sizes[1] == QKV_WT_BLK_16_1 && wt_sizes[2] == QKV_WT_BLK_16_2 && wt_sizes[4] == QKV_WT_BLK_16_4) || 
+    (wt_sizes[3] == 64 && wt_sizes[0] == QKV_WT_BLK_64_0 && wt_sizes[1] == QKV_WT_BLK_64_1 && wt_sizes[2] == QKV_WT_BLK_64_2 && wt_sizes[4] == QKV_WT_BLK_64_4)
+    )
   {
     RECORD_SCOPE(qkv_gemm, {t_in, t_wt});
     _tpp_linear_no_bias<T>(t_in, t_wt, t_out);
   }
-  else if ((wt_sizes[3] == 16 && wt_sizes[0] == FQKV_WT_BLK_16) || (wt_sizes[3] == 64 && wt_sizes[0] == FQKV_WT_BLK_64))
+  else if (
+    (wt_sizes[3] == 16 && wt_sizes[0] == FQKV_WT_BLK_16_0 && wt_sizes[1] == FQKV_WT_BLK_16_1 && wt_sizes[2] == FQKV_WT_BLK_16_2 && wt_sizes[4] == FQKV_WT_BLK_16_4) || 
+    (wt_sizes[3] == 64 && wt_sizes[0] == FQKV_WT_BLK_64_0 && wt_sizes[1] == FQKV_WT_BLK_64_1 && wt_sizes[2] == FQKV_WT_BLK_64_2 && wt_sizes[4] == FQKV_WT_BLK_64_4)
+    )
   {
     RECORD_SCOPE(fqkv_gemm, {t_in, t_wt});
     _tpp_linear_no_bias<T>(t_in, t_wt, t_out);
   }
-  else if ((wt_sizes[3] == 16 && wt_sizes[0] == OGEMM_WT_BLK_16) || (wt_sizes[3] == 64 && wt_sizes[0] == OGEMM_WT_BLK_64))
+  else if (
+    (wt_sizes[3] == 16 && wt_sizes[0] == OGEMM_WT_BLK_16_0 && wt_sizes[1] == OGEMM_WT_BLK_16_1 && wt_sizes[2] == OGEMM_WT_BLK_16_2 && wt_sizes[4] == OGEMM_WT_BLK_16_4) || 
+    (wt_sizes[3] == 64 && wt_sizes[0] == OGEMM_WT_BLK_64_0 && wt_sizes[1] == OGEMM_WT_BLK_64_1 && wt_sizes[2] == OGEMM_WT_BLK_64_2 && wt_sizes[4] == OGEMM_WT_BLK_64_4)
+    )
   {
     RECORD_SCOPE(o_gemm, {t_in, t_wt});
     _tpp_linear_no_bias<T>(t_in, t_wt, t_out);
   }
-  else if ((wt_sizes[3] == 16 && wt_sizes[0] == IGEMM_WT_BLK_16) || (wt_sizes[3] == 64 && wt_sizes[0] == IGEMM_WT_BLK_64))
+  else if (
+    (wt_sizes[3] == 16 && wt_sizes[0] == IGEMM_WT_BLK_16_0 && wt_sizes[1] == IGEMM_WT_BLK_16_1 && wt_sizes[2] == IGEMM_WT_BLK_16_2 && wt_sizes[4] == IGEMM_WT_BLK_16_4) || 
+    (wt_sizes[3] == 64 && wt_sizes[0] == IGEMM_WT_BLK_64_0 && wt_sizes[1] == IGEMM_WT_BLK_64_1 && wt_sizes[2] == IGEMM_WT_BLK_64_2 && wt_sizes[4] == IGEMM_WT_BLK_64_4)
+    )
   {
     RECORD_SCOPE(i_gemm, {t_in, t_wt});
     _tpp_linear_no_bias<T>(t_in, t_wt, t_out);
   }
-  else if (wt_sizes[3] == 100 && wt_sizes[0] == PLN_WT_BLK_100)
+  else if (wt_sizes[3] == 100 && wt_sizes[0] == PLN_WT_BLK_100_0 && wt_sizes[1] == PLN_WT_BLK_100_1 && wt_sizes[2] == PLN_WT_BLK_100_2 && wt_sizes[4] == PLN_WT_BLK_100_4)
   {
     RECORD_SCOPE(pln_gemm, {t_in, t_wt});
     _tpp_linear_no_bias<T>(t_in, t_wt, t_out);
@@ -517,8 +588,11 @@ inline void tpp_linear_add_add(
     t_wt_ = wt_tensor_for_first_token<T>(t_wt_);
     large_cache_opt = true;
   }
-
   auto wt_sizes = t_wt_.sizes();
+#ifdef PRINT_WT_MATRICES
+  printf("linear_add_add;%d;%d;%d;%d;%d\n", wt_sizes[0], wt_sizes[1], wt_sizes[2], wt_sizes[3], wt_sizes[4]);
+#endif    
+
   auto C = in_sizes[2];
 
   auto Nc = wt_sizes[1];
@@ -627,8 +701,11 @@ inline void tpp_linear_gelu(
     t_wt_ = wt_tensor_for_first_token<T>(t_wt_);
     large_cache_opt = true;
   }
-
   auto wt_sizes = t_wt_.sizes();
+#ifdef PRINT_WT_MATRICES
+  printf("linear_gelu;%d;%d;%d;%d;%d\n", wt_sizes[0], wt_sizes[1], wt_sizes[2], wt_sizes[3], wt_sizes[4]);
+#endif      
+  
   auto C = in_sizes[2];
 
   auto Nc = wt_sizes[1];
